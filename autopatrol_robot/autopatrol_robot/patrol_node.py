@@ -90,7 +90,7 @@ class PatrolNode(BasicNavigator):
         request = SpeachText.Request()
         # 设置播报文本
         request.text = text
-        # 异步发送服务请求
+        # 异步发送服务请求，向 /speech_text 服务发送请求，Speaker节点执行回调
         future = self.speach_client_.call_async(request)
         # 阻塞等待服务返回
         rclpy.spin_until_future_complete(self, future)
