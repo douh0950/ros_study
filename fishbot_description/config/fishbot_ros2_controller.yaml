@@ -1,0 +1,155 @@
+# ==============================
+# ROS 2 controller_manager 控制器管理器配置
+# 该 YAML 文件用于配置 ros2_control 中的各类控制器
+# 主要包括：
+# 1. 关节状态广播器 joint_state_broadcaster
+# 2. 力矩控制器 effort_controller
+# 3. 差速驱动控制器 diff_drive_controller
+# ==============================
+
+controller_manager:
+  ros__parameters:
+    # 控制器管理器的更新频率，单位 Hz
+    # 这里表示每秒更新 100 次
+    update_rate: 100  # Hz
+
+    # 是否使用仿真时间
+    # true 表示使用 Gazebo / 仿真环境中的时间
+    # false 表示使用真实系统时间
+    use_sim_time: true
+
+    # 关节状态广播器
+    # 用于发布机器人各关节的状态信息
+    # 通常会发布 /joint_states 话题
+    fishbot_joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+      use_sim_time: true
+
+    # 力矩控制器
+    # 用于直接向指定关节发送 effort 力矩控制命令
+    fishbot_effort_controller:
+      type: effort_controllers/JointGroupEffortController
+
+    # 差速驱动控制器
+    # 用于两轮差速小车底盘控制
+    # 接收 /cmd_vel 速度指令，并换算为左右轮速度
+    fishbot_diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+
+
+# ==============================
+# 力矩控制器参数配置
+# 控制 left_wheel_joint 和 right_wheel_joint 两个轮子关节
+# ==============================
+
+fishbot_effort_controller:
+  ros__parameters:
+
+    # 该控制器控制的关节名称
+    # 名称必须与 URDF / xacro 中定义的关节名一致
+    joints:
+      - left_wheel_joint
+      - right_wheel_joint
+
+    # 控制接口类型
+    # effort 表示通过力 / 力矩方式控制关节
+    command_interfaces:
+      - effort
+
+    # 状态接口类型
+    # position：读取关节位置
+    # velocity：读取关节速度
+    # effort：读取关节力矩
+    state_interfaces:
+      - position
+      - velocity
+      - effort
+
+
+# ==============================
+# 差速驱动控制器参数配置
+# 用于控制两轮差速移动机器人
+# ==============================
+
+fishbot_diff_drive_controller:
+  ros__parameters:
+
+    # 左轮关节名称
+    # 必须与 URDF / xacro 中左轮关节名一致
+    left_wheel_names: ["left_wheel_joint"]
+
+    # 右轮关节名称
+    # 必须与 URDF / xacro 中右轮关节名一致
+    right_wheel_names: ["right_wheel_joint"]
+
+    # 左右轮之间的距离，单位 m
+    # 指两个驱动轮中心之间的横向距离
+    # 该参数会影响机器人转向和里程计计算
+    wheel_separation: 0.20
+
+    # 每个轮子的半径，单位 m
+    # 该参数会影响线速度和里程计计算
+    wheel_radius: 0.032
+
+    # 轮距修正系数
+    # 实际机器人运动与理论模型有误差时，可通过该参数微调
+    wheel_separation_multiplier: 1.0
+
+    # 左轮半径修正系数
+    # 用于补偿左轮实际半径与理论半径的误差
+    left_wheel_radius_multiplier: 1.0
+
+    # 右轮半径修正系数
+    # 用于补偿右轮实际半径与理论半径的误差
+    right_wheel_radius_multiplier: 1.0
+
+    # 控制器发布信息的频率，单位 Hz
+    # 例如发布 /odom、TF 等信息
+    publish_rate: 50.0
+
+    # 里程计坐标系名称
+    # 一般为 odom
+    odom_frame_id: odom
+
+    # 机器人底盘坐标系名称
+    # 一般为 base_link 或 base_footprint
+    base_frame_id: base_footprint
+
+    # 位姿协方差矩阵对角线参数
+    # 用于描述里程计位姿估计的不确定性
+    # 顺序通常为 x, y, z, roll, pitch, yaw
+    pose_covariance_diagonal : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+    # 速度协方差矩阵对角线参数
+    # 用于描述里程计速度估计的不确定性
+    # 顺序通常为 vx, vy, vz, vroll, vpitch, vyaw
+    twist_covariance_diagonal: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+    # 是否使用开环里程计
+    # true：根据发送给轮子的速度指令估算里程计
+    # false：根据轮子反馈的实际位置 / 速度计算里程计
+    open_loop: true
+
+    # 是否发布 odom 到 base_footprint 的 TF 变换
+    # true 表示发布 TF
+    # false 表示不发布 TF
+    enable_odom_tf: true
+
+    # 速度指令超时时间，单位 s
+    # 如果超过 0.5 秒没有收到新的 /cmd_vel 指令，机器人会自动停止
+    cmd_vel_timeout: 0.5
+
+    # 是否发布限幅后的速度
+    # true 时会发布经过速度限制后的指令
+    # 当前被注释掉，表示未启用
+    # publish_limited_velocity: true
+
+    # 是否使用带时间戳的速度指令
+    # false：订阅 geometry_msgs/msg/Twist 类型的 /cmd_vel
+    # true：订阅 geometry_msgs/msg/TwistStamped 类型的速度指令
+    use_stamped_vel: false
+
+    # 速度滚动窗口大小
+    # 用于平滑速度估计
+    # 当前被注释掉，表示使用默认值
+    # velocity_rolling_window_size: 10

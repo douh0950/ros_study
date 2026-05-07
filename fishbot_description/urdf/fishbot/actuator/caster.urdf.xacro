@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- 引入惯性参数宏文件，例如 sphere_inertia，用于给球体添加质量和惯性 -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/common_inertia.xacro" />
+
+    <!--
+        定义一个万向轮 caster 的 xacro 宏
+        caster_name：万向轮名称前缀，例如 front、back
+        xyz：万向轮相对于 base_link 的安装位置
+    -->
+    <xacro:macro name="caster_xacro" params="caster_name xyz">
+
+        <!-- 定义万向轮的 link -->
+        <link name="${caster_name}_caster_link">
+
+            <!-- 可视化模型：在 RViz / Gazebo 中看到的万向轮外观 -->
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <!-- 使用半径为 0.016 m 的球体近似表示万向轮 -->
+                    <sphere radius="0.016" />
+                </geometry>
+                <material name="black">
+                    <color rgba="0.0 0.0 0.0 0.8"/>
+                </material>
+            </visual>
+
+            <!-- 碰撞模型：Gazebo 物理仿真中用于碰撞检测 -->
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <sphere radius="0.016" />
+                </geometry>
+            </collision>
+
+            <!-- 设置万向轮的质量和转动惯量 -->
+            <xacro:sphere_inertia m="0.01" r="0.016" />
+        </link>
+
+        <!-- Gazebo 仿真参数，用于设置万向轮与地面的接触特性 -->
+        <gazebo reference="${caster_name}_caster_link">
+            <!-- 摩擦系数设置为 0，使万向轮尽量不影响底盘运动 -->
+            <mu1 value="0.0" />
+            <mu2 value="0.0" />
+
+            <!-- 接触刚度和阻尼参数，影响仿真中接触稳定性 -->
+            <kp value="1000000000.0" />
+            <kd value="1.0" />
+        </gazebo>
+
+        <!-- 将万向轮固定安装到底盘 base_link 上 -->
+        <joint name="${caster_name}_caster_joint" type="fixed">
+            <parent link="base_link" />
+            <child link="${caster_name}_caster_link" />
+
+            <!-- 万向轮相对于 base_link 的安装位置 -->
+            <origin xyz="${xyz}" />
+
+            <!-- fixed 关节不需要真实转轴，此处 axis 实际不起控制作用 -->
+            <axis xyz="0 0 0" />
+        </joint>
+
+    </xacro:macro>
+</robot>

@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+
+<!--
+    FishBot 机器人总装 xacro 文件
+    作用：
+    1. 引入底盘、传感器、执行器等子模块
+    2. 调用各个 xacro 宏生成完整机器人结构
+    3. 加载 Gazebo 仿真插件和 ros2_control 控制配置
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="fishbot">
+    <!-- ===================== 基础结构文件 ===================== -->
+    <!-- 引入机器人底盘 base_link 相关结构 -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/base.urdf.xacro" />
+    <!-- ===================== 传感器组件文件 ===================== -->
+    <!-- 引入 IMU 传感器结构定义 -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/sensor/imu.urdf.xacro" />
+    <!-- 引入激光雷达结构定义 -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/sensor/laser.urdf.xacro" />
+    <!-- 引入相机结构定义 -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/sensor/camera.urdf.xacro" />
+    <!-- ===================== 执行器组件文件 ===================== -->
+    <!-- 引入左右驱动轮结构定义 -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/actuator/wheel.urdf.xacro" />
+    <!-- 引入前后万向轮结构定义 -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/actuator/caster.urdf.xacro" />
+    <!-- ===================== 生成机器人本体结构 ===================== -->
+    <!--
+        调用底盘宏，生成 base_link
+        length：底盘高度 / 长度参数，具体含义取决于 base_xacro 内部定义
+        radius：底盘半径
+    -->
+    <xacro:base_xacro length="0.12" radius="0.1" />
+    <!-- ===================== 安装传感器 ===================== -->
+    <!--
+        安装 IMU
+        xyz 表示 IMU 相对于 base_link 的安装位置
+    -->
+    <xacro:imu_xacro xyz="0 0 0.02" />
+    <!--
+        安装激光雷达
+        位置在底盘上方 z=0.10 m
+    -->
+    <xacro:laser_xacro xyz="0 0 0.10" />
+    <!--
+        安装相机
+        x=0.10 表示相机安装在机器人前方
+        z=0.075 表示相机距离底盘中心有一定高度
+    -->
+    <xacro:camera_xacro xyz="0.10 0 0.075" />
+    <!-- ===================== 安装执行器：主动轮 + 从动轮 ===================== -->
+    <!--
+        左驱动轮
+        y=0.10 表示安装在机器人左侧
+        z=-0.06 表示轮子安装在底盘下方
+    -->
+    <xacro:wheel_xacro wheel_name="left" xyz="0 0.10 -0.06" />
+    <!--
+        右驱动轮
+        y=-0.10 表示安装在机器人右侧
+    -->
+    <xacro:wheel_xacro wheel_name="right" xyz="0 -0.10 -0.06" />
+    <!--
+        前万向轮
+        x=0.08 表示安装在机器人前方
+        z=-0.076 表示与地面接触
+    -->
+    <xacro:caster_xacro caster_name="front" xyz="0.08 0.0 -0.076" />
+    <!--
+        后万向轮
+        x=-0.08 表示安装在机器人后方
+    -->
+    <xacro:caster_xacro caster_name="back" xyz="-0.08 0.0 -0.076" />
+    <!-- ===================== Gazebo 控制插件 / ros2_control ===================== -->
+    <!--
+        引入传统 Gazebo 差速驱动插件
+        注意：这里只是 include，下面的调用被注释掉了，所以插件不会真正生效
+    -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/plugins/gazebo_control_plugin.xacro" />
+    <!--
+        传统 Gazebo 差速驱动插件调用
+        当前被注释，表示不启用 libgazebo_ros_diff_drive.so 方式控制小车
+        如果启用它，就不要同时启用 ros2_control 差速控制器，避免控制冲突
+    -->
+    <!-- <xacro:gazebo_control_plugin /> -->
+    <!--
+        引入 ros2_control 硬件接口配置文件
+        用于告诉 ROS 2：轮子关节有哪些 command_interface 和 state_interface
+    -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/fishbot.ros2_control.xacro" />
+    <!--
+        启用 ros2_control 配置
+        后续需要配合 controller_manager 和 diff_drive_controller 使用
+    -->
+    <xacro:fishbot_ros2_control />
+    <!-- ===================== Gazebo 传感器插件 ===================== -->
+    <!--
+        引入 Gazebo 传感器插件文件
+        一般包含激光雷达、IMU、相机等 Gazebo 仿真插件
+    -->
+    <xacro:include filename="$(find fishbot_description)/urdf/fishbot/plugins/gazebo_sensor_plugin.xacro" />
+    <!--
+        启用 Gazebo 传感器插件
+        使仿真中能够发布 /scan、/imu、相机图像等话题
+    -->
+    <xacro:gazebo_sensor_plugin />
+</robot>

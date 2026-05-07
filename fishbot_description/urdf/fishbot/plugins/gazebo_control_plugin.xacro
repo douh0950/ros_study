@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!--
+        定义 Gazebo 差速驱动插件宏
+        作用：在 Gazebo 仿真中让小车可以通过 /cmd_vel 控制运动
+    -->
+    <xacro:macro name="gazebo_control_plugin">
+
+        <gazebo>
+            <!--
+                Gazebo ROS 差速驱动插件
+                libgazebo_ros_diff_drive.so 用于两轮差速小车仿真控制
+            -->
+            <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
+
+                <!-- ROS 相关配置：设置命名空间和话题映射 -->
+                <ros>
+                    <!-- 使用根命名空间，即话题为 /cmd_vel、/odom -->
+                    <namespace>/</namespace>
+
+                    <!-- 速度控制话题，外部发布 cmd_vel 即可控制小车运动 -->
+                    <remapping>cmd_vel:=cmd_vel</remapping>
+
+                    <!-- 里程计话题，插件会发布 odom 信息 -->
+                    <remapping>odom:=odom</remapping>
+                </ros>
+
+                <!-- 插件更新频率，单位 Hz -->
+                <update_rate>30</update_rate>
+
+                <!--
+                    左右驱动轮关节名称
+                    必须与 URDF / xacro 中定义的轮子 joint 名称一致
+                -->
+                <left_joint>left_wheel_joint</left_joint>
+                <right_joint>right_wheel_joint</right_joint>
+
+                <!--
+                    差速运动学参数
+                    wheel_separation：左右轮中心距，单位 m
+                    wheel_diameter：轮子直径，单位 m
+                -->
+                <wheel_separation>0.2</wheel_separation>
+                <wheel_diameter>0.064</wheel_diameter>
+
+                <!--
+                    轮子动力学限制
+                    max_wheel_torque：最大轮子力矩
+                    max_wheel_acceleration：最大轮子加速度
+                -->
+                <max_wheel_torque>20</max_wheel_torque>
+                <max_wheel_acceleration>1.0</max_wheel_acceleration>
+
+                <!--
+                    里程计和 TF 输出设置
+                    publish_odom：是否发布 /odom 话题
+                    publish_odom_tf：是否发布 odom 到 base_footprint 的 TF
+                    publish_wheel_tf：是否发布轮子 TF
+                -->
+                <publish_odom>true</publish_odom>
+                <publish_odom_tf>true</publish_odom_tf>
+                <publish_wheel_tf>true</publish_wheel_tf>
+
+                <!-- 里程计坐标系 -->
+                <odometry_frame>odom</odometry_frame>
+
+                <!-- 机器人底盘坐标系 -->
+                <robot_base_frame>base_footprint</robot_base_frame>
+
+            </plugin>
+        </gazebo>
+
+   </xacro:macro>
+</robot>
